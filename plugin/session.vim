@@ -114,6 +114,7 @@ if !exists('g:session_root_directory')
     else
       let g:session_root_directory = '~/.vim/sessions'
     endif
+  endif
 endif
 
 " The default directory where session scripts are stored.
