@@ -8,11 +8,12 @@ Contents ~
  3. Commands                                                 |session-commands|
   1. The |:SaveSession| command
   2. The |:OpenSession| command
-  3. The |:RestartVim| command
-  4. The |:CloseSession| command
-  5. The |:DeleteSession| command
-  6. The |:ViewSession| command
-  7. Tab scoped sessions                                  |tab-scoped-sessions|
+  3. The |:MakeSession| command
+  4. The |:RestartVim| command
+  5. The |:CloseSession| command
+  6. The |:DeleteSession| command
+  7. The |:ViewSession| command
+  8. Tab scoped sessions                                  |tab-scoped-sessions|
    1. The |:OpenTabSession| command
    2. The |:SaveTabSession| command
    3. The |:AppendTabSession| command
@@ -39,7 +40,11 @@ Contents ~
   19. The |g:session_command_aliases| option
   20. The |g:session_menu| option
   21. The |g:session_name_suggestion_function| option
-  22. The |g:loaded_session| option
+  22. The |g:session_root_directory| option
+  23. The |g:session_directory_auto_change| option
+  24. The |g:session_auto_project| option
+  25. The |g:session_autoappend| option
+  26. The |g:loaded_session| option
  5. Compatibility with other plug-ins |session-compatibility-with-other-plug-ins|
  6. Function reference                             |session-function-reference|
   1. Public API for the vim-session plug-in |public-api-for-vim-session-plug-in|
@@ -179,6 +184,17 @@ you'll get a warning and nothing happens. You can use a bang (!) as in
 Note also that when you use a bang (!) right after the command name existing
 tab pages and windows are closed, discarding any changes in the files you were
 editing!
+
+-------------------------------------------------------------------------------
+The :MakeSession command
+
+This command invokes system call `mksession` to make a new session.
+
+You can provide a session name as arguments or the plug-in will ask you to
+input the new session name.
+
+If you want to overwrite a session that already exists, add a bang (!) after
+the command name.
 
 -------------------------------------------------------------------------------
 The *:RestartVim* command
@@ -523,6 +539,34 @@ the existing sessions. You can add your own suggestions using this option by
 setting the option to the name of a Vim script function. By default this option
 is set to an example function that suggests the name of the current git or
 Mercurial feature branch (when you're working in a version control repository).
+
+-------------------------------------------------------------------------------
+The *g:session_auto_project* option
+
+If you want sessions belong to different projects to be saved in different
+sub-directories under a root directory where all sessions are saved. You can
+enable this option like this:
+>
+  :let g:session_auto_project = 1
+
+-------------------------------------------------------------------------------
+The *g:session_directory_auto_change* option
+
+When set to `1`, change `g:session_directory` accordingly when the current
+directory changes. Only take effect when `g:session_auto_project` is set to
+`1`.
+
+-------------------------------------------------------------------------------
+The *g:session_root_directory* option
+
+This option controls the location where all sessions are saved. Only take
+effect when `g:session_auto_project` is set to `1`.
+<
+-------------------------------------------------------------------------------
+The *g:session_autoappend* option
+
+If set to `1`, when you open vi with some filenames as arguments and also open
+a session automatically, append the arguments buffers to the opened session.
 
 -------------------------------------------------------------------------------
 The *g:loaded_session* option
