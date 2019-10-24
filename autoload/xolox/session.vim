@@ -7,16 +7,16 @@
 let g:xolox#session#version = '2.14.0'
 
 " Public API for session persistence. {{{1
-func! xolor#session#auto_load_project()
+func! xolox#session#auto_load_project()
   if get(g: "session_auto_project", 0) != 1
     return
   if index(["gitcommit"], &filetype) != -1
     return
   endif
   let l:argv = argv()
-  call xolor#session#auto_change_session_directory()
+  call xolox#session#auto_change_session_directory()
   if len(xolox#session#get_names(0)) == 0
-    call xolor#session#make_cmd('default', '', 'MakeSession')
+    call xolox#session#make_cmd('default', '', 'MakeSession')
   endif
   if len(xolox#session#get_names(0)) == 1
     let session = xolox#session#get_names(0)[0]
@@ -26,7 +26,7 @@ func! xolor#session#auto_load_project()
       \ 1
       \ )
     if name == 2
-      call xolor#session#make_cmd('', '', 'MakeSession')
+      call xolox#session#make_cmd('', '', 'MakeSession')
     endif
     if name != 1
       return
@@ -439,7 +439,7 @@ function! xolox#session#auto_load() " {{{2
   "
   " [VimEnter]: http://vimdoc.sourceforge.net/htmldoc/autocmd.html#VimEnter
   if g:session_auto_project == 1
-    call xolor#session#auto_load_project()
+    call xolox#session#auto_load_project()
     return
   if g:session_autoload == 'no'
     return
