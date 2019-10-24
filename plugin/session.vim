@@ -186,7 +186,7 @@ augroup PluginSession
   au VimEnter * nested call xolox#session#auto_load()
   au VimLeavePre * call xolox#session#auto_save()
   au VimLeavePre * call xolox#session#auto_unlock()
-  au DirChanged * nested call xolox#session#auto_change_session_directory()
+  au DirChanged * nested call xolox#session#auto_change_session_directory(0)
 augroup END
 
 call xolox#misc#cursorhold#register({'function': 'xolox#session#auto_save_periodic', 'interval': 60})
