@@ -8,13 +8,14 @@ let g:xolox#session#version = '2.14.0'
 
 " Public API for session persistence. {{{1
 func! xolox#session#auto_load_project()
-  if get(g: "session_auto_project", 0) != 1
+  if get(g:, "session_auto_project", 0) != 1
     return
+  endif
   if index(["gitcommit"], &filetype) != -1
     return
   endif
   let l:argv = argv()
-  call xolox#session#auto_change_session_directory()
+  call xolox#session#auto_change_session_directory(1)
   if len(xolox#session#get_names(0)) == 0
     call xolox#session#make_cmd('default', '', 'MakeSession')
   endif
@@ -41,8 +42,8 @@ func! xolox#session#auto_load_project()
   endif
 endfunc
 
-function! xolox#session#auto_change_session_directory()
-  if get(g:, "session_directory_auto_change", 0) == 1
+function! xolox#session#auto_change_session_directory(override)
+  if get(g:, "session_directory_auto_change", 0) == 1 || a:override == 1
     let g:session_directory = fnamemodify(xolox#misc#path#merge(g:session_root_directory, 'project' . substitute(getcwd(), '/', '_', 'g')), ':p')
     if !isdirectory(g:session_directory)
       call mkdir(g:session_directory, "p")
@@ -925,9 +926,7 @@ function! xolox#session#prompt_for_name(action) " {{{2
     endfor
     redraw
     sleep 100 m
-    echo "\nPlease select the session to " . a:action . ":"
-    sleep 100 m
-    let i = inputlist([''] + lines + [''])
+    let i = inputlist(['', "Please select the session to " . a:action . ":", ''] + lines + [''])
     if i >= 1 && i <= len(sessions)
       return sessions[i - 1]
     endif
