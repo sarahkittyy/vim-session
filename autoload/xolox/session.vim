@@ -11,7 +11,7 @@ func! xolox#session#auto_load_project()
   if get(g:, "session_auto_project", 0) != 1
     return
   endif
-  if index(["gitcommit"], &filetype) != -1
+  if index(["gitcommit", "gitrebase"], &filetype) != -1
     return
   endif
   let l:argv = argv()
