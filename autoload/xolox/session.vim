@@ -24,7 +24,7 @@ func! xolox#session#auto_load_project()
     let name = confirm(
       \ "Do you want to create a new session, use the existing session or start with no sessions?",
       \ "1. use '". session . "'\n2. create new session\n3. cancel",
-      \ 1
+      \ 3
       \ )
     if name == 2
       call xolox#session#make_cmd('', '', 'MakeSession')
