@@ -917,18 +917,25 @@ function! xolox#session#prompt_for_name(action) " {{{2
   " If only a single session exists there's nothing to choose from so the name
   " of that session will be returned directly, without prompting the user.
   let sessions = sort(xolox#session#get_names(0), 1)
-  if len(sessions) == 1
+  if len(sessions) == 1 && a:action == 'restore'
     return sessions[0]
   elseif !empty(sessions)
     let lines = copy(sessions)
     for i in range(len(sessions))
       let lines[i] = ' ' . (i + 1) . '. ' . lines[i]
     endfor
+    if a:action == 'restore'
+      let lines += [' ' . (len(sessions) + 1) . '. create a new session']
+    endif
     redraw
     sleep 100 m
     let i = inputlist(['', "Please select the session to " . a:action . ":", ''] + lines + [''])
     if i >= 1 && i <= len(sessions)
       return sessions[i - 1]
+    endif
+    if i == len(sessions) + 1
+      call xolox#session#make_cmd('', '', 'MakeSession')
+      return ''
     endif
   endif
   return ''
