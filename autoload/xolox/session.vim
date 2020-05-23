@@ -442,6 +442,7 @@ function! xolox#session#auto_load() " {{{2
   if g:session_auto_project == 1
     call xolox#session#auto_load_project()
     return
+  end
   if g:session_autoload == 'no'
     return
   endif
@@ -693,7 +694,13 @@ function! xolox#session#save_cmd(name, bang, command) abort " {{{2
   let friendly_path = fnamemodify(path, ':~')
   if a:bang == '!' || !s:session_is_locked(name, a:command)
     let lines = []
+    if exists('g:session_hooks.pre')
+      call g:session_hooks.pre()
+    end
     call xolox#session#save_session(lines, friendly_path)
+    if exists('g:session_hooks.post')
+      call g:session_hooks.post()
+    end
     if xolox#misc#os#is_win() && !xolox#session#options_include('unix')
       call map(lines, 'v:val . "\r"')
     endif

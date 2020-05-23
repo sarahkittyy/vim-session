@@ -108,7 +108,7 @@ endif
 " The default directory where session scripts are stored. Takes effect only
 " when `g:session_directory_auto_change == 1`
 if !exists('g:session_root_directory')
-  if get(g: 'session_directory_auto_change', 0) == 1
+  if get(g:, 'session_directory_auto_change', 0) == 1
     if xolox#misc#os#is_win()
       let g:session_root_directory = '~\vimfiles\sessions'
     else
