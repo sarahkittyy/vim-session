@@ -76,6 +76,8 @@ Contents ~
    25. The |xolox#session#change_tab_options()| function
    26. The |xolox#session#restore_tab_options()| function
    27. The |xolox#session#locking_enabled()| function
+   28. The |xolox#session#current_session_name| variable
+   29. The |xolox#session#current_session_path| variable
   2. Example function for session name suggestions |example-function-for-session-name-suggestions|
    1. The |xolox#session#suggestions#vcs_feature_branch()| function
  7. Troubleshooting                                   |session-troubleshooting|
@@ -847,6 +849,16 @@ enabled, false (0) otherwise.
 
 By default session locking is enabled but users can opt-out by setting
 |g:session_lock_enabled| to false (0).
+
+-------------------------------------------------------------------------------
+The *xolox#session#current_session_name* variable
+
+Set to the name of the last session opened by vim-session.
+
+-------------------------------------------------------------------------------
+The *xolox#session#current_session_path* variable
+
+Set to the path of the last session opened by vim-session.
 
 -------------------------------------------------------------------------------
                                 *example-function-for-session-name-suggestions*
