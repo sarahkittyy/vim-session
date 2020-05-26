@@ -108,6 +108,17 @@ function! xolox#session#save_session(commands, filename) " {{{2
   endif
   call xolox#session#save_qflist(a:commands)
   call xolox#session#save_state(a:commands)
+
+  if exists('g:session_save_commands') && type(g:session_save_commands) == 3
+    call add(a:commands, '')
+    call add(a:commands, '"')
+    call add(a:commands, '" Third-party plugins')
+    call add(a:commands, '"')
+    call add(a:commands, '')
+    call extend(a:commands, g:session_save_commands)
+    call add(a:commands, '')
+  end
+
   if is_all_tabs
     call xolox#session#save_fullscreen(a:commands)
     call add(a:commands, 'doautoall SessionLoadPost')
@@ -696,13 +707,12 @@ function! xolox#session#save_cmd(name, bang, command) abort " {{{2
   let friendly_path = fnamemodify(path, ':~')
   if a:bang == '!' || !s:session_is_locked(name, a:command)
     let lines = []
-    if exists('g:session_hooks.pre')
-      call g:session_hooks.pre()
-    end
+    let g:session_save_commands = []
+    doautocmd User SessionSavePre
+    let g:all_buffers = execute('ls!')
     call xolox#session#save_session(lines, friendly_path)
-    if exists('g:session_hooks.post')
-      call g:session_hooks.post()
-    end
+    unlet! g:session_save_commands
+    doautocmd User SessionSavePost
     if xolox#misc#os#is_win() && !xolox#session#options_include('unix')
       call map(lines, 'v:val . "\r"')
     endif
