@@ -1,3 +1,20 @@
+
+### Preamble
+
+This is a fork of the original [vim-session](https://github.com/xolox/vim-session) plugin, due to the apparent
+disparition of the maintainer. I people are interested in contributing and helping maintain this version, I would be
+more than happy to have your input. Below is a list of additions to the original plugin.
+
+ - Added global variables `g:xolox#session#current_session_name` and `g:xolox#session#current_session_path`
+     Reason: it's more performant than `xolox#session#find_current_session()` if you use the session name in
+     your statusline or tabline.
+ - Added autocommands `SessionSavePre` and `SessionSavePost`: third-party plugins sometimes create buffers that can mess
+     up the session file (eg empty buffer or weird window layout). Those autocommands leave a hook to disable those
+     plugins while the session is saved.
+   Third-party plugins can also save their state in the global variable `g:session_save_commands` as a list of commands
+   that will be added to the session file.
+ - (from [yangyangxcf/vim-session](https://github.com/yangyangxcf/vim-session)) Added `:MakeSession` command
+
 # Extended session management for Vim
 
 The vim-session plug-in improves upon [Vim](http://www.vim.org/)'s built-in [:mksession][mksession] command by enabling you to easily and (if you want) automatically persist and restore your Vim editing sessions. It works by generating a [Vim script](http://vimdoc.sourceforge.net/htmldoc/usr_41.html#script) that restores your current settings and the arrangement of tab pages and/or split windows and the files they contain.
@@ -22,7 +39,7 @@ If you're still getting to know the plug-in, the "Sessions" menu may help: It co
 
 ## Installation
 
-Please refer to the [installation instructions] [howto-install] available on GitHub. Once you've installed the plug-in the commands below will be available to you.
+Please refer to the [installation instructions][howto-install] available on GitHub. Once you've installed the plug-in the commands below will be available to you.
 
 ## Commands
 
