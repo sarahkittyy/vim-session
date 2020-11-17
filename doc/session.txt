@@ -8,11 +8,12 @@ Contents ~
  3. Commands                                                 |session-commands|
   1. The |:SaveSession| command
   2. The |:OpenSession| command
-  3. The |:RestartVim| command
-  4. The |:CloseSession| command
-  5. The |:DeleteSession| command
-  6. The |:ViewSession| command
-  7. Tab scoped sessions                                  |tab-scoped-sessions|
+  3. The |:MakeSession| command
+  4. The |:RestartVim| command
+  5. The |:CloseSession| command
+  6. The |:DeleteSession| command
+  7. The |:ViewSession| command
+  8. Tab scoped sessions                                  |tab-scoped-sessions|
    1. The |:OpenTabSession| command
    2. The |:SaveTabSession| command
    3. The |:AppendTabSession| command
@@ -39,8 +40,13 @@ Contents ~
   19. The |g:session_command_aliases| option
   20. The |g:session_menu| option
   21. The |g:session_name_suggestion_function| option
-  22. The |g:loaded_session| option
+  22. The |g:session_root_directory| option
+  23. The |g:session_directory_auto_change| option
+  24. The |g:session_auto_project| option
+  25. The |g:session_autoappend| option
+  26. The |g:loaded_session| option
  5. Compatibility with other plug-ins |session-compatibility-with-other-plug-ins|
+  1. |SessionSavePre| and |SessionSavePost| autocommands
  6. Function reference                             |session-function-reference|
   1. Public API for the vim-session plug-in |public-api-for-vim-session-plug-in|
    1. The |xolox#session#save_session()| function
@@ -70,6 +76,8 @@ Contents ~
    25. The |xolox#session#change_tab_options()| function
    26. The |xolox#session#restore_tab_options()| function
    27. The |xolox#session#locking_enabled()| function
+   28. The |xolox#session#current_session_name| variable
+   29. The |xolox#session#current_session_path| variable
   2. Example function for session name suggestions |example-function-for-session-name-suggestions|
    1. The |xolox#session#suggestions#vcs_feature_branch()| function
  7. Troubleshooting                                   |session-troubleshooting|
@@ -179,6 +187,17 @@ you'll get a warning and nothing happens. You can use a bang (!) as in
 Note also that when you use a bang (!) right after the command name existing
 tab pages and windows are closed, discarding any changes in the files you were
 editing!
+
+-------------------------------------------------------------------------------
+The :MakeSession command
+
+This command invokes system call `mksession` to make a new session.
+
+You can provide a session name as arguments or the plug-in will ask you to
+input the new session name.
+
+If you want to overwrite a session that already exists, add a bang (!) after
+the command name.
 
 -------------------------------------------------------------------------------
 The *:RestartVim* command
@@ -525,6 +544,34 @@ is set to an example function that suggests the name of the current git or
 Mercurial feature branch (when you're working in a version control repository).
 
 -------------------------------------------------------------------------------
+The *g:session_auto_project* option
+
+If you want sessions belong to different projects to be saved in different
+sub-directories under a root directory where all sessions are saved. You can
+enable this option like this:
+>
+  :let g:session_auto_project = 1
+
+-------------------------------------------------------------------------------
+The *g:session_directory_auto_change* option
+
+When set to `1`, change `g:session_directory` accordingly when the current
+directory changes. Only take effect when `g:session_auto_project` is set to
+`1`.
+
+-------------------------------------------------------------------------------
+The *g:session_root_directory* option
+
+This option controls the location where all sessions are saved. Only take
+effect when `g:session_auto_project` is set to `1`.
+<
+-------------------------------------------------------------------------------
+The *g:session_autoappend* option
+
+If set to `1`, when you open vi with some filenames as arguments and also open
+a session automatically, append the arguments buffers to the opened session.
+
+-------------------------------------------------------------------------------
 The *g:loaded_session* option
 
 This variable isn't really an option but if you want to avoid loading the vim-
@@ -545,9 +592,47 @@ includes specific workarounds for a couple of popular plug-ins:
 - When shell.vim [12] is installed Vim's full-screen state is persisted;
 - The netrw (see |netrw-start|) plug-in supports sessions out of the box.
 
-If your favorite plug-in doesn't work with the vim-session plug-in drop me a
-mail and I'll see what I can do. Please include a link to the plug-in in your
-e-mail so that I can install and test the plug-in.
+Other plugins can use the |SessionSavePre| and |SessionSavePost| autocommands
+to save and restore their state.
+
+-------------------------------------------------------------------------------
+                   *g:session_save_commands* *SessionSavePre* *SessionSavePost*
+
+The SessionSavePre and SessionSavePost autocommands ~
+
+These two autocommands are called when vim-session is saving a session. Upon
+reacting to the |SessionSavePre| autocmd, the plugin should close any non-code
+buffers and push its state to |g:session_save_commands|.
+>
+  autocmd User SessionSavePre call OnSessionSavePre()
+  autocmd User SessionSavePost call OnSessionSavePost()
+
+  let s:buffer_id = bufnr('CustomPluginBuffer')
+
+  let s:saved_state = v:null
+
+  function! OnSessionSavePre()
+    if custom#is_open()
+
+      " If it's open, we close the buffer
+      call custom#close()
+
+      " And we add a command that will restore it's state
+      call add(g:session_save_commands, 'call custom#open()')
+
+      " And we remember that we closed it to be able to open it in
+      " the SessionSavePost event
+      let s:saved_state = 'open'
+    end
+  endfunc
+
+  function! OnSessionSavePost()
+    if s:saved_state == 'open'
+      call custom#open()
+    end
+  endfunc
+<
+-------------------------------------------------------------------------------
 
 ===============================================================================
                                                    *session-function-reference*
@@ -786,6 +871,16 @@ enabled, false (0) otherwise.
 
 By default session locking is enabled but users can opt-out by setting
 |g:session_lock_enabled| to false (0).
+
+-------------------------------------------------------------------------------
+The *xolox#session#current_session_name* variable
+
+Set to the name of the last session opened by vim-session.
+
+-------------------------------------------------------------------------------
+The *xolox#session#current_session_path* variable
+
+Set to the path of the last session opened by vim-session.
 
 -------------------------------------------------------------------------------
                                 *example-function-for-session-name-suggestions*

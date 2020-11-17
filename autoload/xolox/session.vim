@@ -1,12 +1,67 @@
 " Public API for the vim-session plug-in.
 "
 " Author: Peter Odding
-" Last Change: November 1, 2015
+" Last Change: October 24, 2019
 " URL: http://peterodding.com/code/vim/session/
 
-let g:xolox#session#version = '2.13.1'
+let g:xolox#session#version = '2.14.0'
 
 " Public API for session persistence. {{{1
+func! xolox#session#auto_load_project()
+  if get(g:, "session_auto_project", 0) != 1
+    return
+  endif
+  if index(["gitcommit", "gitrebase"], &filetype) != -1
+    return
+  endif
+  let l:argv = argv()
+  call xolox#session#auto_change_session_directory(1)
+  if len(xolox#session#get_names(0)) == 0
+    call xolox#session#make_cmd('default', '', 'MakeSession')
+  endif
+  if len(xolox#session#get_names(0)) == 1
+    let session = xolox#session#get_names(0)[0]
+    let name = confirm(
+      \ "Do you want to create a new session, use the existing session or start with no sessions?",
+      \ "1. use '". session . "'\n2. create new session\n3. cancel",
+      \ 3
+      \ )
+    if name == 2
+      call xolox#session#make_cmd('', '', 'MakeSession')
+    endif
+    if name != 1
+      return
+    endif
+  endif
+  call xolox#session#open_cmd('', '', 'OpenSession')
+  if g:session_autoappend || xolox#session#is_empty()
+    for fn in l:argv
+      execute "badd " . fn
+      execute "edit " . fn
+    endfor
+  endif
+endfunc
+
+function! xolox#session#auto_change_session_directory(override)
+  if get(g:, "session_directory_auto_change", 0) == 1 || a:override == 1
+    let g:session_directory = fnamemodify(xolox#misc#path#merge(g:session_root_directory, 'project' . substitute(getcwd(), '/', '_', 'g')), ':p')
+    if !isdirectory(g:session_directory)
+      call mkdir(g:session_directory, "p")
+    endif
+  endif
+endfunction
+
+function! xolox#session#make_cmd(name, bang, command)
+  if empty(a:name)
+    let l:session = input("New session name: ")
+  else
+    let l:session = a:name
+  endif
+  if a:bang == '!' || !s:session_is_locked(l:session, a:command)
+    let l:path = xolox#session#name_to_path(l:session)
+    execute "mksession " . l:path
+  endif
+endfunction
 
 function! xolox#session#save_session(commands, filename) " {{{2
   " Save the current Vim editing session to a Vim script using the
@@ -53,6 +108,17 @@ function! xolox#session#save_session(commands, filename) " {{{2
   endif
   call xolox#session#save_qflist(a:commands)
   call xolox#session#save_state(a:commands)
+
+  if exists('g:session_save_commands') && type(g:session_save_commands) == 3
+    call add(a:commands, '')
+    call add(a:commands, '"')
+    call add(a:commands, '" Third-party plugins')
+    call add(a:commands, '"')
+    call add(a:commands, '')
+    call extend(a:commands, g:session_save_commands)
+    call add(a:commands, '')
+  end
+
   if is_all_tabs
     call xolox#session#save_fullscreen(a:commands)
     call add(a:commands, 'doautoall SessionLoadPost')
@@ -384,6 +450,10 @@ function! xolox#session#auto_load() " {{{2
   " Normally called by the [VimEnter] [] automatic command event.
   "
   " [VimEnter]: http://vimdoc.sourceforge.net/htmldoc/autocmd.html#VimEnter
+  if g:session_auto_project == 1
+    call xolox#session#auto_load_project()
+    return
+  end
   if g:session_autoload == 'no'
     return
   endif
@@ -589,6 +659,8 @@ function! xolox#session#open_cmd(name, bang, command) abort " {{{2
       endif
       call s:last_session_persist(name)
       call s:flush_session()
+      let g:xolox#session#current_session_name = name
+      let g:xolox#session#current_session_path = path
       call xolox#misc#timer#stop("session.vim %s: Opened %s %s session in %s.", g:xolox#session#version, session_type, string(name), starttime)
       call xolox#misc#msg#info("session.vim %s: Opened %s %s session from %s.", g:xolox#session#version, session_type, string(name), fnamemodify(path, ':~'))
     endif
@@ -635,7 +707,12 @@ function! xolox#session#save_cmd(name, bang, command) abort " {{{2
   let friendly_path = fnamemodify(path, ':~')
   if a:bang == '!' || !s:session_is_locked(name, a:command)
     let lines = []
+    let g:session_save_commands = []
+    doautocmd User SessionSavePre
+    let g:all_buffers = execute('ls!')
     call xolox#session#save_session(lines, friendly_path)
+    unlet! g:session_save_commands
+    doautocmd User SessionSavePost
     if xolox#misc#os#is_win() && !xolox#session#options_include('unix')
       call map(lines, 'v:val . "\r"')
     endif
@@ -859,20 +936,25 @@ function! xolox#session#prompt_for_name(action) " {{{2
   " If only a single session exists there's nothing to choose from so the name
   " of that session will be returned directly, without prompting the user.
   let sessions = sort(xolox#session#get_names(0), 1)
-  if len(sessions) == 1
+  if len(sessions) == 1 && a:action == 'restore'
     return sessions[0]
   elseif !empty(sessions)
     let lines = copy(sessions)
     for i in range(len(sessions))
       let lines[i] = ' ' . (i + 1) . '. ' . lines[i]
     endfor
+    if a:action == 'restore'
+      let lines += [' ' . (len(sessions) + 1) . '. create a new session']
+    endif
     redraw
     sleep 100 m
-    echo "\nPlease select the session to " . a:action . ":"
-    sleep 100 m
-    let i = inputlist([''] + lines + [''])
+    let i = inputlist(['', "Please select the session to " . a:action . ":", ''] + lines + [''])
     if i >= 1 && i <= len(sessions)
       return sessions[i - 1]
+    endif
+    if i == len(sessions) + 1
+      call xolox#session#make_cmd('', '', 'MakeSession')
+      return ''
     endif
   endif
   return ''
